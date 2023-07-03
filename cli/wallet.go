@@ -145,7 +145,7 @@ var walletList = &cli.Command{
 		var keymarkPath string = getWalletMarkRepo(cctx)
 		_, err = os.Stat(keymarkPath)
 		if err == nil {
-			sector, err := ioutil.ReadFile(keymarkPath)
+			sector, err := os.ReadFile(keymarkPath)
 			if err == nil {
 				err = json.Unmarshal(sector, &keyMark)
 				if err != nil {
