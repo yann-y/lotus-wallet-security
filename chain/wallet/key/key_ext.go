@@ -11,7 +11,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var AddrPrefix = []byte{0xff, 0xff, 0xff, 0xff, 0xff} // addrPrefix = "/////"
+var AddrPrefix = []byte{0xff, 0xff, 0xff, 0xff} // addrPrefix = "/////"
 var WalletPasswd string = ""
 var PasswdPath string = ""
 
@@ -31,7 +31,6 @@ func AESEncrypt(key, plaintext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("passwd must 6 to 16 characters")
 	}
-
 	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
