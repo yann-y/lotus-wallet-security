@@ -89,13 +89,16 @@ func DefaultFullNode() *FullNode {
 			SimultaneousTransfersForRetrieval: DefaultSimultaneousTransfers,
 		},
 		Chainstore: Chainstore{
-			EnableSplitstore: false,
+			EnableSplitstore: true,
 			Splitstore: Splitstore{
-				ColdStoreType: "messages",
+				ColdStoreType: "discard",
 				HotStoreType:  "badger",
 				MarkSetType:   "badger",
 
-				HotStoreFullGCFrequency: 20,
+				HotStoreFullGCFrequency:      20,
+				HotStoreMaxSpaceTarget:       650_000_000_000,
+				HotStoreMaxSpaceThreshold:    150_000_000_000,
+				HotstoreMaxSpaceSafetyBuffer: 50_000_000_000,
 			},
 		},
 		Cluster: *DefaultUserRaftConfig(),
@@ -148,13 +151,14 @@ func DefaultStorageMiner() *StorageMiner {
 			BatchPreCommitAboveBaseFee: types.FIL(types.BigMul(types.PicoFil, types.NewInt(320))), // 0.32 nFIL
 			AggregateAboveBaseFee:      types.FIL(types.BigMul(types.PicoFil, types.NewInt(320))), // 0.32 nFIL
 
-			TerminateBatchMin:  1,
-			TerminateBatchMax:  100,
-			TerminateBatchWait: Duration(5 * time.Minute),
+			TerminateBatchMin:                      1,
+			TerminateBatchMax:                      100,
+			TerminateBatchWait:                     Duration(5 * time.Minute),
+			MaxSectorProveCommitsSubmittedPerEpoch: 20,
 		},
 
 		Proving: ProvingConfig{
-			ParallelCheckLimit:    128,
+			ParallelCheckLimit:    32,
 			PartitionCheckTimeout: Duration(20 * time.Minute),
 			SingleCheckTimeout:    Duration(10 * time.Minute),
 		},
@@ -226,7 +230,7 @@ func DefaultStorageMiner() *StorageMiner {
 			EnableMining:        true,
 			EnableSealing:       true,
 			EnableSectorStorage: true,
-			EnableMarkets:       true,
+			EnableMarkets:       false,
 		},
 
 		Fees: MinerFeeConfig{

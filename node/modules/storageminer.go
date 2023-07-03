@@ -18,15 +18,16 @@ import (
 	graphsync "github.com/ipfs/go-graphsync/impl"
 	gsnet "github.com/ipfs/go-graphsync/network"
 	"github.com/ipfs/go-graphsync/storeutil"
+	provider "github.com/ipni/index-provider"
 	"github.com/libp2p/go-libp2p/core/host"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
-	dtnet "github.com/filecoin-project/go-data-transfer/network"
-	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
+	dtimpl "github.com/filecoin-project/go-data-transfer/v2/impl"
+	dtnet "github.com/filecoin-project/go-data-transfer/v2/network"
+	dtgstransport "github.com/filecoin-project/go-data-transfer/v2/transport/graphsync"
 	piecefilestore "github.com/filecoin-project/go-fil-markets/filestore"
 	piecestoreimpl "github.com/filecoin-project/go-fil-markets/piecestore/impl"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
@@ -42,7 +43,6 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-statestore"
-	provider "github.com/filecoin-project/index-provider"
 
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/v0api"
@@ -1014,9 +1014,10 @@ func NewSetSealConfigFunc(r repo.LockedRepo) (dtypes.SetSealingConfigFunc, error
 				AggregateAboveBaseFee:      types.FIL(cfg.AggregateAboveBaseFee),
 				BatchPreCommitAboveBaseFee: types.FIL(cfg.BatchPreCommitAboveBaseFee),
 
-				TerminateBatchMax:  cfg.TerminateBatchMax,
-				TerminateBatchMin:  cfg.TerminateBatchMin,
-				TerminateBatchWait: config.Duration(cfg.TerminateBatchWait),
+				TerminateBatchMax:                      cfg.TerminateBatchMax,
+				TerminateBatchMin:                      cfg.TerminateBatchMin,
+				TerminateBatchWait:                     config.Duration(cfg.TerminateBatchWait),
+				MaxSectorProveCommitsSubmittedPerEpoch: cfg.MaxSectorProveCommitsSubmittedPerEpoch,
 			}
 			c.SetSealingConfig(newCfg)
 		})
@@ -1051,13 +1052,14 @@ func ToSealingConfig(dealmakingCfg config.DealmakingConfig, sealingCfg config.Se
 		PreCommitBatchWait:  time.Duration(sealingCfg.PreCommitBatchWait),
 		PreCommitBatchSlack: time.Duration(sealingCfg.PreCommitBatchSlack),
 
-		AggregateCommits:           sealingCfg.AggregateCommits,
-		MinCommitBatch:             sealingCfg.MinCommitBatch,
-		MaxCommitBatch:             sealingCfg.MaxCommitBatch,
-		CommitBatchWait:            time.Duration(sealingCfg.CommitBatchWait),
-		CommitBatchSlack:           time.Duration(sealingCfg.CommitBatchSlack),
-		AggregateAboveBaseFee:      types.BigInt(sealingCfg.AggregateAboveBaseFee),
-		BatchPreCommitAboveBaseFee: types.BigInt(sealingCfg.BatchPreCommitAboveBaseFee),
+		AggregateCommits:                       sealingCfg.AggregateCommits,
+		MinCommitBatch:                         sealingCfg.MinCommitBatch,
+		MaxCommitBatch:                         sealingCfg.MaxCommitBatch,
+		CommitBatchWait:                        time.Duration(sealingCfg.CommitBatchWait),
+		CommitBatchSlack:                       time.Duration(sealingCfg.CommitBatchSlack),
+		AggregateAboveBaseFee:                  types.BigInt(sealingCfg.AggregateAboveBaseFee),
+		BatchPreCommitAboveBaseFee:             types.BigInt(sealingCfg.BatchPreCommitAboveBaseFee),
+		MaxSectorProveCommitsSubmittedPerEpoch: sealingCfg.MaxSectorProveCommitsSubmittedPerEpoch,
 
 		TerminateBatchMax:  sealingCfg.TerminateBatchMax,
 		TerminateBatchMin:  sealingCfg.TerminateBatchMin,

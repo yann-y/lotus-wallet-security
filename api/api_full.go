@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
-	blocks "github.com/ipfs/go-libipfs/blocks"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
-	datatransfer "github.com/filecoin-project/go-data-transfer"
+	datatransfer "github.com/filecoin-project/go-data-transfer/v2"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-jsonrpc"
@@ -173,9 +173,23 @@ type FullNode interface {
 	// If oldmsgskip is set, messages from before the requested roots are also not included.
 	ChainExport(ctx context.Context, nroots abi.ChainEpoch, oldmsgskip bool, tsk types.TipSetKey) (<-chan []byte, error) //perm:read
 
-	// ChainPrune prunes the stored chain state and garbage collects; only supported if you
+	// ChainExportRangeInternal triggers the export of a chain
+	// CAR-snapshot directly to disk. It is similar to ChainExport,
+	// except, depending on options, the snapshot can include receipts,
+	// messages and stateroots for the length between the specified head
+	// and tail, thus producing "archival-grade" snapshots that include
+	// all the on-chain data.  The header chain is included back to
+	// genesis and these snapshots can be used to initialize Filecoin
+	// nodes.
+	ChainExportRangeInternal(ctx context.Context, head, tail types.TipSetKey, cfg ChainExportConfig) error //perm:admin
+
+	// ChainPrune forces compaction on cold store and garbage collects; only supported if you
 	// are using the splitstore
 	ChainPrune(ctx context.Context, opts PruneOpts) error //perm:admin
+
+	// ChainHotGC does online (badger) GC on the hot store; only supported if you are using
+	// the splitstore
+	ChainHotGC(ctx context.Context, opts HotGCOpts) error //perm:admin
 
 	// ChainCheckBlockstore performs an (asynchronous) health check on the chain/state blockstore
 	// if supported by the underlying implementation.
@@ -283,8 +297,10 @@ type FullNode interface {
 	MpoolGetNonce(context.Context, address.Address) (uint64, error) //perm:read
 	MpoolSub(context.Context) (<-chan MpoolUpdate, error)           //perm:read
 
-	// MpoolClear clears pending messages from the mpool
-	MpoolClear(context.Context, bool) error //perm:write
+	// MpoolClear clears pending messages from the mpool.
+	// If clearLocal is true, ALL messages will be cleared.
+	// If clearLocal is false, local messages will be protected, all others will be cleared.
+	MpoolClear(ctx context.Context, clearLocal bool) error //perm:write
 
 	// MpoolGetConfig returns (a copy of) the current mpool config
 	MpoolGetConfig(context.Context) (*types.MpoolConfig, error) //perm:read
@@ -787,10 +803,12 @@ type FullNode interface {
 	EthGetBlockByHash(ctx context.Context, blkHash ethtypes.EthHash, fullTxInfo bool) (ethtypes.EthBlock, error)                               //perm:read
 	EthGetBlockByNumber(ctx context.Context, blkNum string, fullTxInfo bool) (ethtypes.EthBlock, error)                                        //perm:read
 	EthGetTransactionByHash(ctx context.Context, txHash *ethtypes.EthHash) (*ethtypes.EthTx, error)                                            //perm:read
+	EthGetTransactionByHashLimited(ctx context.Context, txHash *ethtypes.EthHash, limit abi.ChainEpoch) (*ethtypes.EthTx, error)               //perm:read
 	EthGetTransactionHashByCid(ctx context.Context, cid cid.Cid) (*ethtypes.EthHash, error)                                                    //perm:read
 	EthGetMessageCidByTransactionHash(ctx context.Context, txHash *ethtypes.EthHash) (*cid.Cid, error)                                         //perm:read
 	EthGetTransactionCount(ctx context.Context, sender ethtypes.EthAddress, blkOpt string) (ethtypes.EthUint64, error)                         //perm:read
 	EthGetTransactionReceipt(ctx context.Context, txHash ethtypes.EthHash) (*EthTxReceipt, error)                                              //perm:read
+	EthGetTransactionReceiptLimited(ctx context.Context, txHash ethtypes.EthHash, limit abi.ChainEpoch) (*EthTxReceipt, error)                 //perm:read
 	EthGetTransactionByBlockHashAndIndex(ctx context.Context, blkHash ethtypes.EthHash, txIndex ethtypes.EthUint64) (ethtypes.EthTx, error)    //perm:read
 	EthGetTransactionByBlockNumberAndIndex(ctx context.Context, blkNum ethtypes.EthUint64, txIndex ethtypes.EthUint64) (ethtypes.EthTx, error) //perm:read
 
@@ -1346,6 +1364,12 @@ type MsigTransaction struct {
 type PruneOpts struct {
 	MovingGC    bool
 	RetainState int64
+}
+
+type HotGCOpts struct {
+	Threshold float64
+	Periodic  bool
+	Moving    bool
 }
 
 type EthTxReceipt struct {

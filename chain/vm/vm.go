@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	block "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
-	block "github.com/ipfs/go-libipfs/blocks"
 	logging "github.com/ipfs/go-log/v2"
 	mh "github.com/multiformats/go-multihash"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -38,6 +38,7 @@ import (
 )
 
 const MaxCallDepth = 4096
+const CborCodec = 0x51
 
 var (
 	log            = logging.Logger("vm")
@@ -125,6 +126,10 @@ func (bs *gasChargingBlocks) Put(ctx context.Context, blk block.Block) error {
 }
 
 func (vm *LegacyVM) makeRuntime(ctx context.Context, msg *types.Message, parent *Runtime) *Runtime {
+	paramsCodec := uint64(0)
+	if len(msg.Params) > 0 {
+		paramsCodec = CborCodec
+	}
 	rt := &Runtime{
 		ctx:         ctx,
 		vm:          vm,
@@ -140,7 +145,14 @@ func (vm *LegacyVM) makeRuntime(ctx context.Context, msg *types.Message, parent 
 		pricelist:        PricelistByEpoch(vm.blockHeight),
 		allowInternal:    true,
 		callerValidated:  false,
-		executionTrace:   types.ExecutionTrace{Msg: msg},
+		executionTrace: types.ExecutionTrace{Msg: types.MessageTrace{
+			From:        msg.From,
+			To:          msg.To,
+			Value:       msg.Value,
+			Method:      msg.Method,
+			Params:      msg.Params,
+			ParamsCodec: paramsCodec,
+		}},
 	}
 
 	if parent != nil {
@@ -238,6 +250,8 @@ type VMOpts struct {
 	Tracing        bool
 	// ReturnEvents decodes and returns emitted events.
 	ReturnEvents bool
+	// ExecutionLane specifies the execution priority of the created vm
+	ExecutionLane ExecutionLane
 }
 
 func NewLegacyVM(ctx context.Context, opts *VMOpts) (*LegacyVM, error) {
@@ -369,15 +383,14 @@ func (vm *LegacyVM) send(ctx context.Context, msg *types.Message, parent *Runtim
 		return nil, nil
 	}()
 
-	mr := types.MessageReceipt{
-		ExitCode: aerrors.RetCode(err),
-		Return:   ret,
-		GasUsed:  rt.gasUsed,
+	retCodec := uint64(0)
+	if len(ret) > 0 {
+		retCodec = CborCodec
 	}
-	rt.executionTrace.MsgRct = &mr
-	rt.executionTrace.Duration = time.Since(start)
-	if err != nil {
-		rt.executionTrace.Error = err.Error()
+	rt.executionTrace.MsgRct = types.ReturnTrace{
+		ExitCode:    aerrors.RetCode(err),
+		Return:      ret,
+		ReturnCodec: retCodec,
 	}
 
 	return ret, err, rt

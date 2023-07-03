@@ -192,12 +192,15 @@ func (bm *BlockMiner) MineBlocksMustPost(ctx context.Context, blocktime time.Dur
 			reportSuccessFn := func(success bool, epoch abi.ChainEpoch, err error) {
 				// if api shuts down before mining, we may get an error which we should probably just ignore
 				// (fixing it will require rewriting most of the mining loop)
-				if err != nil && !strings.Contains(err.Error(), "websocket connection closed") && !api.ErrorIsIn(err, []error{new(jsonrpc.RPCConnectionError)}) {
+				if err != nil && ctx.Err() == nil && !strings.Contains(err.Error(), "websocket connection closed") && !api.ErrorIsIn(err, []error{new(jsonrpc.RPCConnectionError)}) {
 					require.NoError(bm.t, err)
 				}
 
 				target = epoch
-				wait <- success
+				select {
+				case wait <- success:
+				case <-ctx.Done():
+				}
 			}
 
 			var success bool
@@ -242,7 +245,8 @@ func (bm *BlockMiner) MineBlocksMustPost(ctx context.Context, blocktime time.Dur
 			case ctx.Err() != nil: // context fired.
 				return
 			default: // log error
-				bm.t.Error(err)
+				bm.t.Logf("MINEBLOCKS-post loop error: %+v", err)
+				return
 			}
 		}
 	}()
@@ -288,7 +292,8 @@ func (bm *BlockMiner) MineBlocks(ctx context.Context, blocktime time.Duration) {
 			case ctx.Err() != nil: // context fired.
 				return
 			default: // log error
-				bm.t.Error(err)
+				bm.t.Logf("MINEBLOCKS loop error: %+v", err)
+				return
 			}
 		}
 	}()

@@ -7,7 +7,7 @@ USAGE:
    lotus-miner [global options] command [command options] [arguments...]
 
 VERSION:
-   1.22.1
+   1.23.2
 
 COMMANDS:
    init     Initialize a lotus miner repo
@@ -25,16 +25,6 @@ COMMANDS:
      log           Manage logging
      wait-api      Wait for lotus api to come online
      fetch-params  Fetch proving parameters
-   MARKET:
-     storage-deals    Manage storage deals and related configuration
-     retrieval-deals  Manage retrieval deals and related configuration
-     data-transfers   Manage data transfers
-     dagstore         Manage the dagstore on the markets subsystem
-     index            Manage the index provider on the markets subsystem
-   NETWORK:
-     net  Manage P2P Network
-   RETRIEVAL:
-     pieces  interact with the piecestore
    STORAGE:
      sectors  interact with sector store
      proving  View proving information
@@ -43,10 +33,8 @@ COMMANDS:
 
 GLOBAL OPTIONS:
    --actor value, -a value                  specify other actor to query / manipulate
-   --call-on-markets                        (experimental; may be removed) call this command against a markets node; use only with common commands like net, auth, pprof, etc. whose target may be ambiguous (default: false)
    --color                                  use color in display output (default: depends on output being a TTY)
    --help, -h                               show help (default: false)
-   --markets-repo value                     Markets repo path [$LOTUS_MARKETS_PATH]
    --miner-repo value, --storagerepo value  Specify miner repo path. flag(storagerepo) and env(LOTUS_STORAGE_PATH) are DEPRECATION, will REMOVE SOON (default: "~/.lotusminer") [$LOTUS_MINER_PATH, $LOTUS_STORAGE_PATH]
    --version, -v                            print the version (default: false)
    --vv                                     enables very verbose mode, useful for debugging the CLI (default: false)
@@ -286,7 +274,7 @@ NAME:
    lotus-miner actor set-peer-id - set the peer id of your miner
 
 USAGE:
-   lotus-miner actor set-peer-id [command options] [arguments...]
+   lotus-miner actor set-peer-id [command options] <peer id>
 
 OPTIONS:
    --gas-limit value  set gas limit (default: 0)
@@ -333,7 +321,6 @@ USAGE:
    lotus-miner actor control list [command options] [arguments...]
 
 OPTIONS:
-   --color    use color in display output (default: depends on output being a TTY)
    --verbose  (default: false)
    
 ```
@@ -608,1057 +595,6 @@ OPTIONS:
    
 ```
 
-## lotus-miner storage-deals
-```
-NAME:
-   lotus-miner storage-deals - Manage storage deals and related configuration
-
-USAGE:
-   lotus-miner storage-deals command [command options] [arguments...]
-
-COMMANDS:
-     import-data        Manually import data for a deal
-     list               List all deals for this miner
-     selection          Configure acceptance criteria for storage deal proposals
-     set-ask            Configure the miner's ask
-     get-ask            Print the miner's ask
-     set-blocklist      Set the miner's list of blocklisted piece CIDs
-     get-blocklist      List the contents of the miner's piece CID blocklist
-     reset-blocklist    Remove all entries from the miner's piece CID blocklist
-     set-seal-duration  Set the expected time, in minutes, that you expect sealing sectors to take. Deals that start before this duration will be rejected.
-     pending-publish    list deals waiting in publish queue
-     retry-publish      retry publishing a deal
-     help, h            Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals import-data
-```
-NAME:
-   lotus-miner storage-deals import-data - Manually import data for a deal
-
-USAGE:
-   lotus-miner storage-deals import-data [command options] <proposal CID> <file>
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals list
-```
-NAME:
-   lotus-miner storage-deals list - List all deals for this miner
-
-USAGE:
-   lotus-miner storage-deals list [command options] [arguments...]
-
-OPTIONS:
-   --format value  output format of data, supported: table, json (default: "table")
-   --verbose, -v   (default: false)
-   --watch         watch deal updates in real-time, rather than a one time list (default: false)
-   
-```
-
-### lotus-miner storage-deals selection
-```
-NAME:
-   lotus-miner storage-deals selection - Configure acceptance criteria for storage deal proposals
-
-USAGE:
-   lotus-miner storage-deals selection command [command options] [arguments...]
-
-COMMANDS:
-     list     List storage deal proposal selection criteria
-     reset    Reset storage deal proposal selection criteria to default values
-     reject   Configure criteria which necessitate automatic rejection
-     help, h  Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner storage-deals selection list
-```
-NAME:
-   lotus-miner storage-deals selection list - List storage deal proposal selection criteria
-
-USAGE:
-   lotus-miner storage-deals selection list [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner storage-deals selection reset
-```
-NAME:
-   lotus-miner storage-deals selection reset - Reset storage deal proposal selection criteria to default values
-
-USAGE:
-   lotus-miner storage-deals selection reset [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner storage-deals selection reject
-```
-NAME:
-   lotus-miner storage-deals selection reject - Configure criteria which necessitate automatic rejection
-
-USAGE:
-   lotus-miner storage-deals selection reject [command options] [arguments...]
-
-OPTIONS:
-   --offline     (default: false)
-   --online      (default: false)
-   --unverified  (default: false)
-   --verified    (default: false)
-   
-```
-
-### lotus-miner storage-deals set-ask
-```
-NAME:
-   lotus-miner storage-deals set-ask - Configure the miner's ask
-
-USAGE:
-   lotus-miner storage-deals set-ask [command options] [arguments...]
-
-OPTIONS:
-   --max-piece-size SIZE   Set maximum piece size (w/bit-padding, in bytes) in ask to SIZE (default: miner sector size)
-   --min-piece-size SIZE   Set minimum piece size (w/bit-padding, in bytes) in ask to SIZE (default: 256B)
-   --price PRICE           Set the price of the ask for unverified deals (specified as FIL / GiB / Epoch) to PRICE.
-   --verified-price PRICE  Set the price of the ask for verified deals (specified as FIL / GiB / Epoch) to PRICE
-   
-```
-
-### lotus-miner storage-deals get-ask
-```
-NAME:
-   lotus-miner storage-deals get-ask - Print the miner's ask
-
-USAGE:
-   lotus-miner storage-deals get-ask [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals set-blocklist
-```
-NAME:
-   lotus-miner storage-deals set-blocklist - Set the miner's list of blocklisted piece CIDs
-
-USAGE:
-   lotus-miner storage-deals set-blocklist [command options] [<path-of-file-containing-newline-delimited-piece-CIDs> (optional, will read from stdin if omitted)]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals get-blocklist
-```
-NAME:
-   lotus-miner storage-deals get-blocklist - List the contents of the miner's piece CID blocklist
-
-USAGE:
-   lotus-miner storage-deals get-blocklist [command options] [arguments...]
-
-OPTIONS:
-   
-```
-
-### lotus-miner storage-deals reset-blocklist
-```
-NAME:
-   lotus-miner storage-deals reset-blocklist - Remove all entries from the miner's piece CID blocklist
-
-USAGE:
-   lotus-miner storage-deals reset-blocklist [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals set-seal-duration
-```
-NAME:
-   lotus-miner storage-deals set-seal-duration - Set the expected time, in minutes, that you expect sealing sectors to take. Deals that start before this duration will be rejected.
-
-USAGE:
-   lotus-miner storage-deals set-seal-duration [command options] <minutes>
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner storage-deals pending-publish
-```
-NAME:
-   lotus-miner storage-deals pending-publish - list deals waiting in publish queue
-
-USAGE:
-   lotus-miner storage-deals pending-publish [command options] [arguments...]
-
-OPTIONS:
-   --publish-now  send a publish message now (default: false)
-   
-```
-
-### lotus-miner storage-deals retry-publish
-```
-NAME:
-   lotus-miner storage-deals retry-publish - retry publishing a deal
-
-USAGE:
-   lotus-miner storage-deals retry-publish [command options] <proposal CID>
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-## lotus-miner retrieval-deals
-```
-NAME:
-   lotus-miner retrieval-deals - Manage retrieval deals and related configuration
-
-USAGE:
-   lotus-miner retrieval-deals command [command options] [arguments...]
-
-COMMANDS:
-     selection  Configure acceptance criteria for retrieval deal proposals
-     list       List all active retrieval deals for this miner
-     set-ask    Configure the provider's retrieval ask
-     get-ask    Get the provider's current retrieval ask configured by the provider in the ask-store using the set-ask CLI command
-     help, h    Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner retrieval-deals selection
-```
-NAME:
-   lotus-miner retrieval-deals selection - Configure acceptance criteria for retrieval deal proposals
-
-USAGE:
-   lotus-miner retrieval-deals selection command [command options] [arguments...]
-
-COMMANDS:
-     list     List retrieval deal proposal selection criteria
-     reset    Reset retrieval deal proposal selection criteria to default values
-     reject   Configure criteria which necessitate automatic rejection
-     help, h  Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner retrieval-deals selection list
-```
-NAME:
-   lotus-miner retrieval-deals selection list - List retrieval deal proposal selection criteria
-
-USAGE:
-   lotus-miner retrieval-deals selection list [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner retrieval-deals selection reset
-```
-NAME:
-   lotus-miner retrieval-deals selection reset - Reset retrieval deal proposal selection criteria to default values
-
-USAGE:
-   lotus-miner retrieval-deals selection reset [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner retrieval-deals selection reject
-```
-NAME:
-   lotus-miner retrieval-deals selection reject - Configure criteria which necessitate automatic rejection
-
-USAGE:
-   lotus-miner retrieval-deals selection reject [command options] [arguments...]
-
-OPTIONS:
-   --offline  (default: false)
-   --online   (default: false)
-   
-```
-
-### lotus-miner retrieval-deals list
-```
-NAME:
-   lotus-miner retrieval-deals list - List all active retrieval deals for this miner
-
-USAGE:
-   lotus-miner retrieval-deals list [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner retrieval-deals set-ask
-```
-NAME:
-   lotus-miner retrieval-deals set-ask - Configure the provider's retrieval ask
-
-USAGE:
-   lotus-miner retrieval-deals set-ask [command options] [arguments...]
-
-OPTIONS:
-   --payment-interval value           Set the payment interval (in bytes) for retrieval (default: 1MiB)
-   --payment-interval-increase value  Set the payment interval increase (in bytes) for retrieval (default: 1MiB)
-   --price value                      Set the price of the ask for retrievals (FIL/GiB)
-   --unseal-price value               Set the price to unseal
-   
-```
-
-### lotus-miner retrieval-deals get-ask
-```
-NAME:
-   lotus-miner retrieval-deals get-ask - Get the provider's current retrieval ask configured by the provider in the ask-store using the set-ask CLI command
-
-USAGE:
-   lotus-miner retrieval-deals get-ask [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-## lotus-miner data-transfers
-```
-NAME:
-   lotus-miner data-transfers - Manage data transfers
-
-USAGE:
-   lotus-miner data-transfers command [command options] [arguments...]
-
-COMMANDS:
-     list         List ongoing data transfers for this miner
-     restart      Force restart a stalled data transfer
-     cancel       Force cancel a data transfer
-     diagnostics  Get detailed diagnostics on active transfers with a specific peer
-     help, h      Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner data-transfers list
-```
-NAME:
-   lotus-miner data-transfers list - List ongoing data transfers for this miner
-
-USAGE:
-   lotus-miner data-transfers list [command options] [arguments...]
-
-OPTIONS:
-   --color        use color in display output (default: depends on output being a TTY)
-   --completed    show completed data transfers (default: false)
-   --show-failed  show failed/cancelled transfers (default: false)
-   --verbose, -v  print verbose transfer details (default: false)
-   --watch        watch deal updates in real-time, rather than a one time list (default: false)
-   
-```
-
-### lotus-miner data-transfers restart
-```
-NAME:
-   lotus-miner data-transfers restart - Force restart a stalled data transfer
-
-USAGE:
-   lotus-miner data-transfers restart [command options] [arguments...]
-
-OPTIONS:
-   --initiator     specify only transfers where peer is/is not initiator (default: false)
-   --peerid value  narrow to transfer with specific peer
-   
-```
-
-### lotus-miner data-transfers cancel
-```
-NAME:
-   lotus-miner data-transfers cancel - Force cancel a data transfer
-
-USAGE:
-   lotus-miner data-transfers cancel [command options] [arguments...]
-
-OPTIONS:
-   --cancel-timeout value  time to wait for cancel to be sent to client (default: 5s)
-   --initiator             specify only transfers where peer is/is not initiator (default: false)
-   --peerid value          narrow to transfer with specific peer
-   
-```
-
-### lotus-miner data-transfers diagnostics
-```
-NAME:
-   lotus-miner data-transfers diagnostics - Get detailed diagnostics on active transfers with a specific peer
-
-USAGE:
-   lotus-miner data-transfers diagnostics [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-## lotus-miner dagstore
-```
-NAME:
-   lotus-miner dagstore - Manage the dagstore on the markets subsystem
-
-USAGE:
-   lotus-miner dagstore command [command options] [arguments...]
-
-COMMANDS:
-     list-shards       List all shards known to the dagstore, with their current status
-     register-shard    Register a shard
-     initialize-shard  Initialize the specified shard
-     recover-shard     Attempt to recover a shard in errored state
-     initialize-all    Initialize all uninitialized shards, streaming results as they're produced; only shards for unsealed pieces are initialized by default
-     gc                Garbage collect the dagstore
-     lookup-pieces     Lookup pieces that a given CID belongs to
-     help, h           Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner dagstore list-shards
-```
-NAME:
-   lotus-miner dagstore list-shards - List all shards known to the dagstore, with their current status
-
-USAGE:
-   lotus-miner dagstore list-shards [command options] [arguments...]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner dagstore register-shard
-```
-NAME:
-   lotus-miner dagstore register-shard - Register a shard
-
-USAGE:
-   lotus-miner dagstore register-shard [command options] [key]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner dagstore initialize-shard
-```
-NAME:
-   lotus-miner dagstore initialize-shard - Initialize the specified shard
-
-USAGE:
-   lotus-miner dagstore initialize-shard [command options] [key]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner dagstore recover-shard
-```
-NAME:
-   lotus-miner dagstore recover-shard - Attempt to recover a shard in errored state
-
-USAGE:
-   lotus-miner dagstore recover-shard [command options] [key]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner dagstore initialize-all
-```
-NAME:
-   lotus-miner dagstore initialize-all - Initialize all uninitialized shards, streaming results as they're produced; only shards for unsealed pieces are initialized by default
-
-USAGE:
-   lotus-miner dagstore initialize-all [command options] [arguments...]
-
-OPTIONS:
-   --color              use color in display output (default: depends on output being a TTY)
-   --concurrency value  maximum shards to initialize concurrently at a time; use 0 for unlimited (default: 0)
-   --include-sealed     initialize sealed pieces as well (default: false)
-   
-```
-
-### lotus-miner dagstore gc
-```
-NAME:
-   lotus-miner dagstore gc - Garbage collect the dagstore
-
-USAGE:
-   lotus-miner dagstore gc [command options] [arguments...]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner dagstore lookup-pieces
-```
-NAME:
-   lotus-miner dagstore lookup-pieces - Lookup pieces that a given CID belongs to
-
-USAGE:
-   lotus-miner dagstore lookup-pieces [command options] <cid>
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-## lotus-miner index
-```
-NAME:
-   lotus-miner index - Manage the index provider on the markets subsystem
-
-USAGE:
-   lotus-miner index command [command options] [arguments...]
-
-COMMANDS:
-     announce      Announce a deal to indexers so they can download its index
-     announce-all  Announce all active deals to indexers so they can download the indices
-     help, h       Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner index announce
-```
-NAME:
-   lotus-miner index announce - Announce a deal to indexers so they can download its index
-
-USAGE:
-   lotus-miner index announce [command options] <deal proposal cid>
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-### lotus-miner index announce-all
-```
-NAME:
-   lotus-miner index announce-all - Announce all active deals to indexers so they can download the indices
-
-USAGE:
-   lotus-miner index announce-all [command options] [arguments...]
-
-OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
-   
-```
-
-## lotus-miner net
-```
-NAME:
-   lotus-miner net - Manage P2P Network
-
-USAGE:
-   lotus-miner net command [command options] [arguments...]
-
-COMMANDS:
-     peers                Print peers
-     ping                 Ping peers
-     connect              Connect to a peer
-     disconnect           Disconnect from a peer
-     listen               List listen addresses
-     id                   Get node identity
-     find-peer, findpeer  Find the addresses of a given peerID
-     scores               Print peers' pubsub scores
-     reachability         Print information about reachability from the internet
-     bandwidth            Print bandwidth usage information
-     block                Manage network connection gating rules
-     stat                 Report resource usage for a scope
-     limit                Get or set resource limits for a scope
-     protect              Add one or more peer IDs to the list of protected peer connections
-     unprotect            Remove one or more peer IDs from the list of protected peer connections.
-     list-protected       List the peer IDs with protected connection.
-     help, h              Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net peers
-```
-NAME:
-   lotus-miner net peers - Print peers
-
-USAGE:
-   lotus-miner net peers [command options] [arguments...]
-
-OPTIONS:
-   --agent, -a     Print agent name (default: false)
-   --extended, -x  Print extended peer information in json (default: false)
-   
-```
-
-### lotus-miner net ping
-```
-NAME:
-   lotus-miner net ping - Ping peers
-
-USAGE:
-   lotus-miner net ping [command options] [peerMultiaddr]
-
-OPTIONS:
-   --count value, -c value     specify the number of times it should ping (default: 10)
-   --interval value, -i value  minimum time between pings (default: 1s)
-   
-```
-
-### lotus-miner net connect
-```
-NAME:
-   lotus-miner net connect - Connect to a peer
-
-USAGE:
-   lotus-miner net connect [command options] [peerMultiaddr|minerActorAddress]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net disconnect
-```
-NAME:
-   lotus-miner net disconnect - Disconnect from a peer
-
-USAGE:
-   lotus-miner net disconnect [command options] [peerID]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net listen
-```
-NAME:
-   lotus-miner net listen - List listen addresses
-
-USAGE:
-   lotus-miner net listen [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net id
-```
-NAME:
-   lotus-miner net id - Get node identity
-
-USAGE:
-   lotus-miner net id [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner net find-peer, findpeer
-```
-```
-
-### lotus-miner net scores
-```
-NAME:
-   lotus-miner net scores - Print peers' pubsub scores
-
-USAGE:
-   lotus-miner net scores [command options] [arguments...]
-
-OPTIONS:
-   --extended, -x  print extended peer scores in json (default: false)
-   
-```
-
-### lotus-miner net reachability
-```
-NAME:
-   lotus-miner net reachability - Print information about reachability from the internet
-
-USAGE:
-   lotus-miner net reachability [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net bandwidth
-```
-NAME:
-   lotus-miner net bandwidth - Print bandwidth usage information
-
-USAGE:
-   lotus-miner net bandwidth [command options] [arguments...]
-
-OPTIONS:
-   --by-peer      list bandwidth usage by peer (default: false)
-   --by-protocol  list bandwidth usage by protocol (default: false)
-   
-```
-
-### lotus-miner net block
-```
-NAME:
-   lotus-miner net block - Manage network connection gating rules
-
-USAGE:
-   lotus-miner net block command [command options] [arguments...]
-
-COMMANDS:
-     add      Add connection gating rules
-     remove   Remove connection gating rules
-     list     list connection gating rules
-     help, h  Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner net block add
-```
-NAME:
-   lotus-miner net block add - Add connection gating rules
-
-USAGE:
-   lotus-miner net block add command [command options] [arguments...]
-
-COMMANDS:
-     peer     Block a peer
-     ip       Block an IP address
-     subnet   Block an IP subnet
-     help, h  Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block add peer
-```
-NAME:
-   lotus-miner net block add peer - Block a peer
-
-USAGE:
-   lotus-miner net block add peer [command options] <Peer> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block add ip
-```
-NAME:
-   lotus-miner net block add ip - Block an IP address
-
-USAGE:
-   lotus-miner net block add ip [command options] <IP> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block add subnet
-```
-NAME:
-   lotus-miner net block add subnet - Block an IP subnet
-
-USAGE:
-   lotus-miner net block add subnet [command options] <CIDR> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner net block remove
-```
-NAME:
-   lotus-miner net block remove - Remove connection gating rules
-
-USAGE:
-   lotus-miner net block remove command [command options] [arguments...]
-
-COMMANDS:
-     peer     Unblock a peer
-     ip       Unblock an IP address
-     subnet   Unblock an IP subnet
-     help, h  Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block remove peer
-```
-NAME:
-   lotus-miner net block remove peer - Unblock a peer
-
-USAGE:
-   lotus-miner net block remove peer [command options] <Peer> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block remove ip
-```
-NAME:
-   lotus-miner net block remove ip - Unblock an IP address
-
-USAGE:
-   lotus-miner net block remove ip [command options] <IP> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-##### lotus-miner net block remove subnet
-```
-NAME:
-   lotus-miner net block remove subnet - Unblock an IP subnet
-
-USAGE:
-   lotus-miner net block remove subnet [command options] <CIDR> ...
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-#### lotus-miner net block list
-```
-NAME:
-   lotus-miner net block list - list connection gating rules
-
-USAGE:
-   lotus-miner net block list [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net stat
-```
-NAME:
-   lotus-miner net stat - Report resource usage for a scope
-
-USAGE:
-   lotus-miner net stat [command options] scope
-
-DESCRIPTION:
-   Report resource usage for a scope.
-   
-     The scope can be one of the following:
-     - system        -- reports the system aggregate resource usage.
-     - transient     -- reports the transient resource usage.
-     - svc:<service> -- reports the resource usage of a specific service.
-     - proto:<proto> -- reports the resource usage of a specific protocol.
-     - peer:<peer>   -- reports the resource usage of a specific peer.
-     - all           -- reports the resource usage for all currently active scopes.
-   
-
-OPTIONS:
-   --json  (default: false)
-   
-```
-
-### lotus-miner net limit
-```
-NAME:
-   lotus-miner net limit - Get or set resource limits for a scope
-
-USAGE:
-   lotus-miner net limit [command options] scope [limit]
-
-DESCRIPTION:
-   Get or set resource limits for a scope.
-   
-     The scope can be one of the following:
-     - system        -- reports the system aggregate resource usage.
-     - transient     -- reports the transient resource usage.
-     - svc:<service> -- reports the resource usage of a specific service.
-     - proto:<proto> -- reports the resource usage of a specific protocol.
-     - peer:<peer>   -- reports the resource usage of a specific peer.
-   
-    The limit is json-formatted, with the same structure as the limits file.
-   
-
-OPTIONS:
-   --set  set the limit for a scope (default: false)
-   
-```
-
-### lotus-miner net protect
-```
-NAME:
-   lotus-miner net protect - Add one or more peer IDs to the list of protected peer connections
-
-USAGE:
-   lotus-miner net protect [command options] <peer-id> [<peer-id>...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net unprotect
-```
-NAME:
-   lotus-miner net unprotect - Remove one or more peer IDs from the list of protected peer connections.
-
-USAGE:
-   lotus-miner net unprotect [command options] <peer-id> [<peer-id>...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner net list-protected
-```
-NAME:
-   lotus-miner net list-protected - List the peer IDs with protected connection.
-
-USAGE:
-   lotus-miner net list-protected [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-## lotus-miner pieces
-```
-NAME:
-   lotus-miner pieces - interact with the piecestore
-
-USAGE:
-   lotus-miner pieces command [command options] [arguments...]
-
-DESCRIPTION:
-   The piecestore is a database that tracks and manages data that is made available to the retrieval market
-
-COMMANDS:
-     list-pieces  list registered pieces
-     list-cids    list registered payload CIDs
-     piece-info   get registered information for a given piece CID
-     cid-info     get registered information for a given payload CID
-     help, h      Shows a list of commands or help for one command
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner pieces list-pieces
-```
-NAME:
-   lotus-miner pieces list-pieces - list registered pieces
-
-USAGE:
-   lotus-miner pieces list-pieces [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner pieces list-cids
-```
-NAME:
-   lotus-miner pieces list-cids - list registered payload CIDs
-
-USAGE:
-   lotus-miner pieces list-cids [command options] [arguments...]
-
-OPTIONS:
-   --verbose, -v  (default: false)
-   
-```
-
-### lotus-miner pieces piece-info
-```
-NAME:
-   lotus-miner pieces piece-info - get registered information for a given piece CID
-
-USAGE:
-   lotus-miner pieces piece-info [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
-### lotus-miner pieces cid-info
-```
-NAME:
-   lotus-miner pieces cid-info - get registered information for a given payload CID
-
-USAGE:
-   lotus-miner pieces cid-info [command options] [arguments...]
-
-OPTIONS:
-   --help, -h  show help (default: false)
-   
-```
-
 ## lotus-miner sectors
 ```
 NAME:
@@ -1677,18 +613,18 @@ COMMANDS:
      precommits            Print on-chain precommit info
      check-expire          Inspect expiring sectors
      expired               Get or cleanup expired sectors
-     renew                 Renew expiring sectors while not exceeding each sector's max life
-     extend                Extend sector expiration
+     extend                Extend expiring sectors while not exceeding each sector's max life
      terminate             Terminate sector on-chain then remove (WARNING: This means losing power and collateral for the removed sector)
      remove                Forcefully remove a sector (WARNING: This means losing power and collateral for the removed sector (use 'terminate' for lower penalty))
      snap-up               Mark a committed capacity sector to be filled with deals
      abort-upgrade         Abort the attempted (SnapDeals) upgrade of a CC sector, reverting it to as before
      seal                  Manually start sealing a sector (filling any unused space with junk)
-     set-seal-delay        Set the time, in minutes, that a new sector waits for deals before sealing starts
+     set-seal-delay        Set the time (in minutes) that a new sector waits for deals before sealing starts
      get-cc-collateral     Get the collateral required to pledge a committed capacity sector
      batching              manage batch sector operations
      match-pending-pieces  force a refreshed match of pending pieces to open sectors without manually waiting for more deals
      compact-partitions    removes dead sectors from partitions and reduces the number of partitions used if possible
+     unseal                unseal a sector
      help, h               Shows a list of commands or help for one command
 
 OPTIONS:
@@ -1721,14 +657,14 @@ USAGE:
    lotus-miner sectors list [command options] [arguments...]
 
 OPTIONS:
-   --color, -c           use color in display output (default: depends on output being a TTY)
-   --events, -e          display number of events the sector has received (default: false)
-   --fast, -f            don't show on-chain info for better performance (default: false)
-   --initial-pledge, -p  display initial pledge (default: false)
-   --seal-time, -t       display how long it took for the sector to be sealed (default: false)
-   --show-removed, -r    show removed sectors (default: false)
-   --states value        filter sectors by a comma-separated list of states
-   --unproven, -u        only show sectors which aren't in the 'Proving' state (default: false)
+   --check-parallelism value  number of parallel requests to make for checking sector states (default: 300)
+   --events, -e               display number of events the sector has received (default: false)
+   --fast, -f                 don't show on-chain info for better performance (default: false)
+   --initial-pledge, -p       display initial pledge (default: false)
+   --seal-time, -t            display how long it took for the sector to be sealed (default: false)
+   --show-removed, -r         show removed sectors (default: false)
+   --states value             filter sectors by a comma-separated list of states
+   --unproven, -u             only show sectors which aren't in the 'Proving' state (default: false)
    
 ```
 
@@ -1884,44 +820,27 @@ OPTIONS:
    
 ```
 
-### lotus-miner sectors renew
+### lotus-miner sectors extend
 ```
 NAME:
-   lotus-miner sectors renew - Renew expiring sectors while not exceeding each sector's max life
+   lotus-miner sectors extend - Extend expiring sectors while not exceeding each sector's max life
 
 USAGE:
-   lotus-miner sectors renew [command options] [arguments...]
+   lotus-miner sectors extend [command options] <sectorNumbers...(optional)>
 
 OPTIONS:
+   --drop-claims           drop claims for sectors that can be extended, but only by dropping some of their verified power claims (default: false)
    --exclude value         optionally provide a file containing excluding sectors
    --extension value       try to extend selected sectors by this number of epochs, defaults to 540 days (default: 1555200)
    --from value            only consider sectors whose current expiration epoch is in the range of [from, to], <from> defaults to: now + 120 (1 hour) (default: 0)
    --max-fee value         use up to this amount of FIL for one message. pass this flag to avoid message congestion. (default: "0")
-   --max-sectors value     the maximum number of sectors contained in each message message (default: 0)
+   --max-sectors value     the maximum number of sectors contained in each message (default: 0)
    --new-expiration value  try to extend selected sectors to this epoch, ignoring extension (default: 0)
    --only-cc               only extend CC sectors (useful for making sector ready for snap upgrade) (default: false)
-   --really-do-it          pass this flag to really renew sectors, otherwise will only print out json representation of parameters (default: false)
+   --really-do-it          pass this flag to really extend sectors, otherwise will only print out json representation of parameters (default: false)
    --sector-file value     provide a file containing one sector number in each line, ignoring above selecting criteria
    --to value              only consider sectors whose current expiration epoch is in the range of [from, to], <to> defaults to: now + 92160 (32 days) (default: 0)
    --tolerance value       don't try to extend sectors by fewer than this number of epochs, defaults to 7 days (default: 20160)
-   
-```
-
-### lotus-miner sectors extend
-```
-NAME:
-   lotus-miner sectors extend - Extend sector expiration
-
-USAGE:
-   lotus-miner sectors extend [command options] <sectorNumbers...>
-
-OPTIONS:
-                              
-   --expiration-cutoff value  when extending v1 sectors, skip sectors whose current expiration is more than <cutoff> epochs from now (infinity if unspecified) (default: 0)
-   --expiration-ignore value  when extending v1 sectors, skip sectors whose current expiration is less than <ignore> epochs from now (default: 120)
-   --new-expiration value     new expiration epoch (default: 0)
-   --tolerance value          when extending v1 sectors, don't try to extend sectors by fewer than this number of epochs (default: 20160)
-   --v1-sectors               renews all v1 sectors up to the maximum possible lifetime (default: false)
    
 ```
 
@@ -2025,13 +944,13 @@ OPTIONS:
 ### lotus-miner sectors set-seal-delay
 ```
 NAME:
-   lotus-miner sectors set-seal-delay - Set the time, in minutes, that a new sector waits for deals before sealing starts
+   lotus-miner sectors set-seal-delay - Set the time (in minutes) that a new sector waits for deals before sealing starts
 
 USAGE:
-   lotus-miner sectors set-seal-delay [command options] <minutes>
+   lotus-miner sectors set-seal-delay [command options] <time>
 
 OPTIONS:
-   --help, -h  show help (default: false)
+   --seconds  Specifies that the time argument should be in seconds (default: false)
    
 ```
 
@@ -2118,6 +1037,19 @@ OPTIONS:
    --deadline value                           the deadline to compact the partitions in (default: 0)
    --partitions value [ --partitions value ]  list of partitions to compact sectors in
    --really-do-it                             Actually send transaction performing the action (default: false)
+   
+```
+
+### lotus-miner sectors unseal
+```
+NAME:
+   lotus-miner sectors unseal - unseal a sector
+
+USAGE:
+   lotus-miner sectors unseal [command options] [sector number]
+
+OPTIONS:
+   --help, -h  show help (default: false)
    
 ```
 
@@ -2223,7 +1155,7 @@ USAGE:
    lotus-miner proving workers [command options] [arguments...]
 
 OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
+   --help, -h  show help (default: false)
    
 ```
 
@@ -2296,7 +1228,7 @@ NAME:
    lotus-miner storage attach - attach local storage path
 
 USAGE:
-   lotus-miner storage attach [command options] [arguments...]
+   lotus-miner storage attach [command options] [path]
 
 DESCRIPTION:
    Storage can be attached to the miner using this command. The storage volume
@@ -2349,7 +1281,7 @@ NAME:
    lotus-miner storage redeclare - redeclare sectors in a local storage path
 
 USAGE:
-   lotus-miner storage redeclare [command options] [arguments...]
+   lotus-miner storage redeclare [command options] [path]
 
 OPTIONS:
    --all           redeclare all storage paths (default: false)
@@ -2371,7 +1303,6 @@ COMMANDS:
      help, h  Shows a list of commands or help for one command
 
 OPTIONS:
-   --color     use color in display output (default: depends on output being a TTY)
    --help, -h  show help (default: false)
    
 ```
@@ -2385,7 +1316,7 @@ USAGE:
    lotus-miner storage list sectors [command options] [arguments...]
 
 OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
+   --help, -h  show help (default: false)
    
 ```
 
@@ -2458,7 +1389,6 @@ USAGE:
    lotus-miner sealing jobs [command options] [arguments...]
 
 OPTIONS:
-   --color          use color in display output (default: depends on output being a TTY)
    --show-ret-done  show returned but not consumed calls (default: false)
    
 ```
@@ -2472,7 +1402,7 @@ USAGE:
    lotus-miner sealing workers [command options] [arguments...]
 
 OPTIONS:
-   --color  use color in display output (default: depends on output being a TTY)
+   --help, -h  show help (default: false)
    
 ```
 

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ipfs/boxo/files"
 	"github.com/ipfs/go-cid"
-	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 	dstest "github.com/ipfs/go-merkledag/test"
