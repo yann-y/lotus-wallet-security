@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-cid"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 
@@ -425,6 +426,11 @@ func TestEthNewFilterDefaultSpec(t *testing.T) {
 	elogs, err := parseEthLogsFromFilterResult(res)
 	require.NoError(err)
 	AssertEthLogs(t, elogs, expected, received)
+
+	// giving a number to fromBlock/toBlock needs to be in hex format, so make sure passing in decimal fails
+	blockNrInDecimal := "2812200"
+	_, err = client.EthNewFilter(ctx, &ethtypes.EthFilterSpec{FromBlock: &blockNrInDecimal, ToBlock: &blockNrInDecimal})
+	require.Error(err, "expected error when fromBlock/toBlock is not in hex format")
 }
 
 func TestEthGetLogsBasic(t *testing.T) {
@@ -538,6 +544,7 @@ func TestTxReceiptBloom(t *testing.T) {
 		kit.MockProofs(),
 		kit.ThroughRPC())
 	ens.InterconnectAll().BeginMining(blockTime)
+	logging.SetLogLevel("fullnode", "DEBUG")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -572,6 +579,10 @@ func TestTxReceiptBloom(t *testing.T) {
 		}
 	}
 
+	// Deflake plan: (Flake: 5 bits instead of 6)
+	//   Debug + search logs for "LogsBloom"
+	//   compare to passing case.
+	//
 	// 3 bits from the topic, 3 bits from the address
 	require.Equal(t, 6, bitsSet)
 }

@@ -59,7 +59,7 @@ func createTestStorage(t *testing.T, p string, seal bool, att ...*paths.Local) s
 func TestMoveShared(t *testing.T) {
 	logging.SetAllLoggers(logging.LevelDebug)
 
-	index := paths.NewIndex(nil)
+	index := paths.NewMemIndex(nil)
 
 	ctx := context.Background()
 
@@ -477,7 +477,7 @@ func TestReader(t *testing.T) {
 					require.Nil(t, rdg)
 					require.Contains(t, err.Error(), tc.errStr)
 				} else {
-					rd, err = rdg(0)
+					rd, err = rdg(0, storiface.PaddedByteIndex(size))
 					require.Error(t, err)
 					require.Nil(t, rd)
 					require.Contains(t, err.Error(), tc.errStr)
@@ -490,7 +490,7 @@ func TestReader(t *testing.T) {
 				require.Nil(t, rd)
 			} else {
 				require.NotNil(t, rdg)
-				rd, err := rdg(0)
+				rd, err := rdg(0, storiface.PaddedByteIndex(size))
 				require.NoError(t, err)
 
 				defer func() {

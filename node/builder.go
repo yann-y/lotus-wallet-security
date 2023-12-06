@@ -89,6 +89,9 @@ const (
 
 	// health checks
 	CheckFDLimit
+	CheckFvmConcurrency
+	CheckUDPBufferSize
+	LegacyMarketsEOL
 
 	// libp2p
 	PstoreAddSelfKeysKey
@@ -125,6 +128,8 @@ const (
 	RunPeerTaggerKey
 	SetupFallbackBlockstoresKey
 	GoRPCServer
+
+	ConsensusReporterKey
 
 	SetApiEndpointKey
 
@@ -164,6 +169,8 @@ func defaults() []Option {
 		Override(new(dtypes.NodeStartTime), FromVal(dtypes.NodeStartTime(time.Now()))),
 
 		Override(CheckFDLimit, modules.CheckFdLimit(build.DefaultFDLimit)),
+		Override(CheckFvmConcurrency, modules.CheckFvmConcurrency()),
+		Override(CheckUDPBufferSize, modules.CheckUDPBufferSize(2048*1024)),
 
 		Override(new(system.MemoryConstraints), modules.MemoryConstraints),
 		Override(InitMemoryWatchdog, modules.MemoryWatchdog),

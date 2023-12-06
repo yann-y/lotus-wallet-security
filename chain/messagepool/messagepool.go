@@ -21,6 +21,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/minio/blake2b-simd"
 	"github.com/raulk/clock"
+	"go.opencensus.io/stats"
 	"golang.org/x/xerrors"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
@@ -63,6 +64,9 @@ var MaxNonceGap = uint64(4)
 
 const MaxMessageSize = 64 << 10 // 64KiB
 
+// NOTE: When adding a new error type, please make sure to add the new error type in
+// func (mv *MessageValidator) Validate(ctx context.Context, pid peer.ID, msg *pubsub.Message)
+// in /chain/sub/incoming.go
 var (
 	ErrMessageTooBig = errors.New("message too big")
 
@@ -207,8 +211,10 @@ func ComputeRBF(curPrem abi.TokenAmount, replaceByFeeRatio types.Percent) abi.To
 
 func CapGasFee(mff dtypes.DefaultMaxFeeFunc, msg *types.Message, sendSpec *api.MessageSendSpec) {
 	var maxFee abi.TokenAmount
+	var maximizeFeeCap bool
 	if sendSpec != nil {
 		maxFee = sendSpec.MaxFee
+		maximizeFeeCap = sendSpec.MaximizeFeeCap
 	}
 	if maxFee.Int == nil || maxFee.Equals(big.Zero()) {
 		mf, err := mff()
@@ -219,15 +225,12 @@ func CapGasFee(mff dtypes.DefaultMaxFeeFunc, msg *types.Message, sendSpec *api.M
 		maxFee = mf
 	}
 
-	gl := types.NewInt(uint64(msg.GasLimit))
-	totalFee := types.BigMul(msg.GasFeeCap, gl)
-
-	if totalFee.LessThanEqual(maxFee) {
-		msg.GasPremium = big.Min(msg.GasFeeCap, msg.GasPremium) // cap premium at FeeCap
-		return
+	gaslimit := types.NewInt(uint64(msg.GasLimit))
+	totalFee := types.BigMul(msg.GasFeeCap, gaslimit)
+	if maximizeFeeCap || totalFee.GreaterThan(maxFee) {
+		msg.GasFeeCap = big.Div(maxFee, gaslimit)
 	}
 
-	msg.GasFeeCap = big.Div(maxFee, gl)
 	msg.GasPremium = big.Min(msg.GasFeeCap, msg.GasPremium) // cap premium at FeeCap
 }
 
@@ -448,12 +451,8 @@ func New(ctx context.Context, api Provider, ds dtypes.MetadataDS, us stmgr.Upgra
 	return mp, nil
 }
 
-func (mp *MessagePool) TryForEachPendingMessage(f func(cid.Cid) error) error {
-	// avoid deadlocks in splitstore compaction when something else needs to access the blockstore
-	// while holding the mpool lock
-	if !mp.lk.TryLock() {
-		return xerrors.Errorf("mpool TryForEachPendingMessage: could not acquire lock")
-	}
+func (mp *MessagePool) ForEachPendingMessage(f func(cid.Cid) error) error {
+	mp.lk.Lock()
 	defer mp.lk.Unlock()
 
 	for _, mset := range mp.pending {
@@ -749,8 +748,7 @@ func (mp *MessagePool) checkMessage(ctx context.Context, m *types.SignedMessage)
 	}
 
 	if err := mp.VerifyMsgSig(m); err != nil {
-		log.Warnf("signature verification failed: %s", err)
-		return err
+		return xerrors.Errorf("signature verification failed: %s", err)
 	}
 
 	return nil
@@ -969,13 +967,11 @@ func (mp *MessagePool) addLocked(ctx context.Context, m *types.SignedMessage, st
 	}
 
 	if _, err := mp.api.PutMessage(ctx, m); err != nil {
-		log.Warnf("mpooladd cs.PutMessage failed: %s", err)
-		return err
+		return xerrors.Errorf("mpooladd cs.PutMessage failed: %s", err)
 	}
 
 	if _, err := mp.api.PutMessage(ctx, &m.Message); err != nil {
-		log.Warnf("mpooladd cs.PutMessage failed: %s", err)
-		return err
+		return xerrors.Errorf("mpooladd cs.PutMessage failed: %s", err)
 	}
 
 	// Note: If performance becomes an issue, making this getOrCreatePendingMset will save some work
@@ -1025,6 +1021,9 @@ func (mp *MessagePool) addLocked(ctx context.Context, m *types.SignedMessage, st
 			Messages: []MessagePoolEvtMessage{{Message: m.Message, CID: m.Cid()}},
 		}
 	})
+
+	// Record the current size of the Mpool
+	stats.Record(ctx, metrics.MpoolMessageCount.M(int64(mp.currentSize)))
 
 	return nil
 }
@@ -1218,6 +1217,9 @@ func (mp *MessagePool) remove(ctx context.Context, from address.Address, nonce u
 			return
 		}
 	}
+
+	// Record the current size of the Mpool
+	stats.Record(ctx, metrics.MpoolMessageCount.M(int64(mp.currentSize)))
 }
 
 func (mp *MessagePool) Pending(ctx context.Context) ([]*types.SignedMessage, *types.TipSet) {

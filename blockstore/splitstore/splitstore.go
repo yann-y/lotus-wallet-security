@@ -164,7 +164,7 @@ type SplitStore struct {
 	path string
 
 	mx          sync.Mutex
-	warmupEpoch abi.ChainEpoch // protected by mx
+	warmupEpoch atomic.Int64
 	baseEpoch   abi.ChainEpoch // protected by compaction lock
 	pruneEpoch  abi.ChainEpoch // protected by compaction lock
 
@@ -182,7 +182,6 @@ type SplitStore struct {
 
 	compactionIndex int64
 	pruneIndex      int64
-	onlineGCCnt     int64
 
 	ctx    context.Context
 	cancel func()
@@ -684,9 +683,7 @@ func (s *SplitStore) View(ctx context.Context, cid cid.Cid, cb func([]byte) erro
 }
 
 func (s *SplitStore) isWarm() bool {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-	return s.warmupEpoch > 0
+	return s.warmupEpoch.Load() > 0
 }
 
 // State tracking
@@ -757,7 +754,7 @@ func (s *SplitStore) Start(chain ChainAccessor, us stmgr.UpgradeSchedule) error 
 	bs, err = s.ds.Get(s.ctx, warmupEpochKey)
 	switch err {
 	case nil:
-		s.warmupEpoch = bytesToEpoch(bs)
+		s.warmupEpoch.Store(bytesToInt64(bs))
 
 	case dstore.ErrNotFound:
 		warmup = true
@@ -791,7 +788,7 @@ func (s *SplitStore) Start(chain ChainAccessor, us stmgr.UpgradeSchedule) error 
 		return xerrors.Errorf("error loading compaction index: %w", err)
 	}
 
-	log.Infow("starting splitstore", "baseEpoch", s.baseEpoch, "warmupEpoch", s.warmupEpoch)
+	log.Infow("starting splitstore", "baseEpoch", s.baseEpoch, "warmupEpoch", s.warmupEpoch.Load())
 
 	if warmup {
 		err = s.warmup(curTs)

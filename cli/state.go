@@ -1065,12 +1065,19 @@ var StateComputeStateCmd = &cli.Command{
 
 		ctx := ReqContext(cctx)
 
-		ts, err := LoadTipSet(ctx, cctx, api)
+		h := abi.ChainEpoch(cctx.Uint64("vm-height"))
+		var ts *types.TipSet
+		if tss := cctx.String("tipset"); tss != "" {
+			ts, err = ParseTipSetRef(ctx, api, tss)
+		} else if h > 0 {
+			ts, err = api.ChainGetTipSetByHeight(ctx, h, types.EmptyTSK)
+		} else {
+			ts, err = api.ChainHead(ctx)
+		}
 		if err != nil {
 			return err
 		}
 
-		h := abi.ChainEpoch(cctx.Uint64("vm-height"))
 		if h == 0 {
 			h = ts.Height()
 		}
@@ -1528,6 +1535,9 @@ func printMsg(ctx context.Context, api v0api.FullNode, msg cid.Cid, mw *lapi.Msg
 	if err := printReceiptReturn(ctx, api, m, mw.Receipt); err != nil {
 		return err
 	}
+	if mw.Receipt.EventsRoot != nil {
+		fmt.Printf("Events Root: %s\n", mw.Receipt.EventsRoot)
+	}
 
 	return nil
 }
@@ -1910,8 +1920,29 @@ var StateSysActorCIDsCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		for name, cid := range actorsCids {
-			_, _ = fmt.Fprintf(tw, "%v\t%v\n", name, cid)
+
+		var actorsCidTuples []struct {
+			actorName string
+			actorCid  cid.Cid
+		}
+
+		for name, actorCid := range actorsCids {
+			keyVal := struct {
+				actorName string
+				actorCid  cid.Cid
+			}{
+				actorName: name,
+				actorCid:  actorCid,
+			}
+			actorsCidTuples = append(actorsCidTuples, keyVal)
+		}
+
+		sort.Slice(actorsCidTuples, func(i, j int) bool {
+			return actorsCidTuples[i].actorName < actorsCidTuples[j].actorName
+		})
+
+		for _, keyVal := range actorsCidTuples {
+			_, _ = fmt.Fprintf(tw, "%v\t%v\n", keyVal.actorName, keyVal.actorCid)
 		}
 		return tw.Flush()
 	},
