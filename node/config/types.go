@@ -22,13 +22,14 @@ type Common struct {
 // FullNode is a full node config
 type FullNode struct {
 	Common
-	Client     Client
-	Wallet     Wallet
-	Fees       FeeConfig
-	Chainstore Chainstore
-	Cluster    UserRaftConfig
-	Fevm       FevmConfig
-	Index      IndexConfig
+	Client        Client
+	Wallet        Wallet
+	Fees          FeeConfig
+	Chainstore    Chainstore
+	Cluster       UserRaftConfig
+	Fevm          FevmConfig
+	Index         IndexConfig
+	FaultReporter FaultReporterConfig
 }
 
 // // Common
@@ -61,6 +62,40 @@ type StorageMiner struct {
 	Fees          MinerFeeConfig
 	Addresses     MinerAddressConfig
 	DAGStore      DAGStoreConfig
+
+	HarmonyDB HarmonyDB
+}
+
+type LotusProviderConfig struct {
+	Subsystems ProviderSubsystemsConfig
+
+	Fees      LotusProviderFees
+	Addresses LotusProviderAddresses
+	Proving   ProvingConfig
+	Journal   JournalConfig
+	Apis      ApisConfig
+}
+
+type ApisConfig struct {
+	// ChainApiInfo is the API endpoint for the Lotus daemon.
+	ChainApiInfo []string
+
+	// RPC Secret for the storage subsystem.
+	// If integrating with lotus-miner this must match the value from
+	// cat ~/.lotusminer/keystore/MF2XI2BNNJ3XILLQOJUXMYLUMU | jq -r .PrivateKey
+	StorageRPCSecret string
+}
+
+type JournalConfig struct {
+	//Events of the form: "system1:event1,system1:event2[,...]"
+	DisabledEvents string
+}
+
+type ProviderSubsystemsConfig struct {
+	EnableWindowPost    bool
+	WindowPostMaxTasks  int
+	EnableWinningPost   bool
+	WinningPostMaxTasks int
 }
 
 type DAGStoreConfig struct {
@@ -108,8 +143,32 @@ type MinerSubsystemConfig struct {
 	EnableSectorStorage bool
 	EnableMarkets       bool
 
+	// When enabled, the sector index will reside in an external database
+	// as opposed to the local KV store in the miner process
+	// This is useful to allow workers to bypass the lotus miner to access sector information
+	EnableSectorIndexDB bool
+
 	SealerApiInfo      string // if EnableSealing == false
 	SectorIndexApiInfo string // if EnableSectorStorage == false
+
+	// When window post is enabled, the miner will automatically submit window post proofs
+	// for all sectors that are eligible for window post
+	// IF WINDOW POST IS DISABLED, THE MINER WILL NOT SUBMIT WINDOW POST PROOFS
+	// THIS WILL RESULT IN FAULTS AND PENALTIES IF NO OTHER MECHANISM IS RUNNING
+	// TO SUBMIT WINDOW POST PROOFS.
+	// Note: This option is entirely disabling the window post scheduler,
+	//   not just the builtin PoSt computation like Proving.DisableBuiltinWindowPoSt.
+	//   This option will stop lotus-miner from performing any actions related
+	//   to window post, including scheduling, submitting proofs, and recovering
+	//   sectors.
+	DisableWindowPoSt bool
+
+	// When winning post is disabled, the miner process will NOT attempt to mine
+	// blocks. This should only be set when there's an external process mining
+	// blocks on behalf of the miner.
+	// When disabled and no external block producers are configured, all potential
+	// block rewards will be missed!
+	DisableWinningPoSt bool
 }
 
 type DealmakingConfig struct {
@@ -289,13 +348,10 @@ type ProvingConfig struct {
 	// 'lotus-miner proving compute window-post 0'
 	DisableWDPoStPreChecks bool
 
-	// Maximum number of partitions to prove in a single SubmitWindowPoSt messace. 0 = network limit (10 in nv16)
+	// Maximum number of partitions to prove in a single SubmitWindowPoSt messace. 0 = network limit (3 in nv21)
 	//
 	// A single partition may contain up to 2349 32GiB sectors, or 2300 64GiB sectors.
-	//
-	// The maximum number of sectors which can be proven in a single PoSt message is 25000 in network version 16, which
-	// means that a single message can prove at most 10 partitions
-	//
+	//	//
 	// Note that setting this value lower may result in less efficient gas use - more messages will be sent,
 	// to prove each deadline, resulting in more total gas use (but each message will have lower gas limit)
 	//
@@ -352,20 +408,12 @@ type SealingConfig struct {
 	// required to have expiration of at least the soonest-ending deal
 	MinUpgradeSectorExpiration uint64
 
-	// When set to a non-zero value, minimum number of epochs until sector expiration above which upgrade candidates will
-	// be selected based on lowest initial pledge.
-	//
-	// Target sector expiration is calculated by looking at the input deal queue, sorting it by deal expiration, and
-	// selecting N deals from the queue up to sector size. The target expiration will be Nth deal end epoch, or in case
-	// where there weren't enough deals to fill a sector, DealMaxDuration (540 days = 1555200 epochs)
-	//
-	// Setting this to a high value (for example to maximum deal duration - 1555200) will disable selection based on
-	// initial pledge - upgrade sectors will always be chosen based on longest expiration
+	// DEPRECATED: Target expiration is no longer used
 	MinTargetUpgradeSectorExpiration uint64
 
 	// CommittedCapacitySectorLifetime is the duration a Committed Capacity (CC) sector will
 	// live before it must be extended or converted into sector containing deals before it is
-	// terminated. Value must be between 180-540 days inclusive
+	// terminated. Value must be between 180-1278 days (1278 in nv21, 540 before nv21).
 	CommittedCapacitySectorLifetime Duration
 
 	// Period of time that a newly created sector will wait for more deals to be packed in to before it starts to seal.
@@ -394,8 +442,6 @@ type SealingConfig struct {
 	// Don't send collateral with messages even if there is no available balance in the miner actor
 	DisableCollateralFallback bool
 
-	// enable / disable precommit batching (takes effect after nv13)
-	BatchPreCommits bool
 	// maximum precommit batch size - batches will be sent immediately above this size
 	MaxPreCommitBatch int
 	// how long to wait before submitting a batch after crossing the minimum batch size
@@ -415,7 +461,8 @@ type SealingConfig struct {
 	CommitBatchSlack Duration
 
 	// network BaseFee below which to stop doing precommit batching, instead
-	// sending precommit messages to the chain individually
+	// sending precommit messages to the chain individually. When the basefee is
+	// below this threshold, precommit messages will get sent out immediately.
 	BatchPreCommitAboveBaseFee types.FIL
 
 	// network BaseFee below which to stop doing commit aggregation, instead
@@ -437,6 +484,9 @@ type SealingConfig struct {
 	// todo TargetSealingSectors uint64
 
 	// todo TargetSectors - stop auto-pleding new sectors after this many sectors are sealed, default CC upgrade for deals sectors if above
+
+	// UseSyntheticPoRep, when set to true, will reduce the amount of cache data held on disk after the completion of PreCommit 2 to 11GiB.
+	UseSyntheticPoRep bool
 }
 
 type SealerConfig struct {
@@ -498,8 +548,24 @@ type MinerFeeConfig struct {
 	MaxWindowPoStGasFee    types.FIL
 	MaxPublishDealsFee     types.FIL
 	MaxMarketBalanceAddFee types.FIL
+
+	MaximizeWindowPoStFeeCap bool
 }
 
+type LotusProviderFees struct {
+	DefaultMaxFee      types.FIL
+	MaxPreCommitGasFee types.FIL
+	MaxCommitGasFee    types.FIL
+
+	// maxBatchFee = maxBase + maxPerSector * nSectors
+	MaxPreCommitBatchGasFee BatchFeeConfig
+	MaxCommitBatchGasFee    BatchFeeConfig
+
+	MaxTerminateGasFee types.FIL
+	// WindowPoSt is a high-value operation, so the default fee should be high.
+	MaxWindowPoStGasFee types.FIL
+	MaxPublishDealsFee  types.FIL
+}
 type MinerAddressConfig struct {
 	// Addresses to send PreCommit messages from
 	PreCommitControl []string
@@ -516,6 +582,26 @@ type MinerAddressConfig struct {
 	// A control address that doesn't have enough funds will still be chosen
 	// over the worker address if this flag is set.
 	DisableWorkerFallback bool
+}
+
+type LotusProviderAddresses struct {
+	// Addresses to send PreCommit messages from
+	PreCommitControl []string
+	// Addresses to send Commit messages from
+	CommitControl    []string
+	TerminateControl []string
+
+	// DisableOwnerFallback disables usage of the owner address for messages
+	// sent automatically
+	DisableOwnerFallback bool
+	// DisableWorkerFallback disables usage of the worker address for messages
+	// sent automatically, if control addresses are configured.
+	// A control address that doesn't have enough funds will still be chosen
+	// over the worker address if this flag is set.
+	DisableWorkerFallback bool
+
+	// MinerAddresses are the addresses of the miner actors to use for sending messages
+	MinerAddresses []string
 }
 
 // API contains configs for API endpoint
@@ -593,7 +679,7 @@ type Chainstore struct {
 
 type Splitstore struct {
 	// ColdStoreType specifies the type of the coldstore.
-	// It can be "messages" (default) to store only messages, "universal" to store all chain state or "discard" for discarding cold blocks.
+	// It can be "discard" (default) for discarding cold blocks, "messages" to store only messages or "universal" to store all chain state..
 	ColdStoreType string
 	// HotStoreType specifies the type of the hotstore.
 	// Only currently supported value is "badger".
@@ -739,4 +825,41 @@ type IndexConfig struct {
 	// EXPERIMENTAL FEATURE. USE WITH CAUTION
 	// EnableMsgIndex enables indexing of messages on chain.
 	EnableMsgIndex bool
+}
+
+type HarmonyDB struct {
+	// HOSTS is a list of hostnames to nodes running YugabyteDB
+	// in a cluster. Only 1 is required
+	Hosts []string
+
+	// The Yugabyte server's username with full credentials to operate on Lotus' Database. Blank for default.
+	Username string
+
+	// The password for the related username. Blank for default.
+	Password string
+
+	// The database (logical partition) within Yugabyte. Blank for default.
+	Database string
+
+	// The port to find Yugabyte. Blank for default.
+	Port string
+}
+type FaultReporterConfig struct {
+	// EnableConsensusFaultReporter controls whether the node will monitor and
+	// report consensus faults. When enabled, the node will watch for malicious
+	// behaviors like double-mining and parent grinding, and submit reports to the
+	// network. This can earn reporter rewards, but is not guaranteed. Nodes should
+	// enable fault reporting with care, as it may increase resource usage, and may
+	// generate gas fees without earning rewards.
+	EnableConsensusFaultReporter bool
+
+	// ConsensusFaultReporterDataDir is the path where fault reporter state will be
+	// persisted. This directory should have adequate space and permissions for the
+	// node process.
+	ConsensusFaultReporterDataDir string
+
+	// ConsensusFaultReporterAddress is the wallet address used for submitting
+	// ReportConsensusFault messages. It will pay for gas fees, and receive any
+	// rewards. This address should have adequate funds to cover gas fees.
+	ConsensusFaultReporterAddress string
 }

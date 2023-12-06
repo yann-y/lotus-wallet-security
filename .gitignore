@@ -6,6 +6,7 @@
 /lotus-chainwatch
 /lotus-shed
 /lotus-sim
+/lotus-provider
 /lotus-townhall
 /lotus-fountain
 /lotus-stats
@@ -41,6 +42,7 @@ build/paramfetch.sh
 bin/ipget
 bin/tmp/*
 .idea
+.vscode
 scratchpad
 
 build/builtin-actors/v*
@@ -52,3 +54,4 @@ dist/
 # The following files are checked into git and result
 # in dirty git state if removed from the docker context
 !extern/filecoin-ffi/rust/filecoin.pc
+!extern/test-vectors

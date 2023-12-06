@@ -29,7 +29,7 @@ import (
 	"github.com/filecoin-project/lotus/chain/types"
 )
 
-// Load returns an abstract copy of payment channel state, irregardless of actor version
+// Load returns an abstract copy of payment channel state, regardless of actor version
 func Load(store adt.Store, act *types.Actor) (State, error) {
 	if name, av, ok := actors.GetActorMetaByCode(act.Code); ok {
 		if name != manifest.PaychKey {
@@ -49,6 +49,9 @@ func Load(store adt.Store, act *types.Actor) (State, error) {
 
 		case actorstypes.Version11:
 			return load11(store, act.Head)
+
+		case actorstypes.Version12:
+			return load12(store, act.Head)
 
 		}
 	}
@@ -167,6 +170,9 @@ func Message(version actorstypes.Version, from address.Address) MessageBuilder {
 	case actorstypes.Version11:
 		return message11{from}
 
+	case actorstypes.Version12:
+		return message12{from}
+
 	default:
 		panic(fmt.Sprintf("unsupported actors version: %d", version))
 	}
@@ -208,5 +214,6 @@ func AllCodes() []cid.Cid {
 		(&state9{}).Code(),
 		(&state10{}).Code(),
 		(&state11{}).Code(),
+		(&state12{}).Code(),
 	}
 }

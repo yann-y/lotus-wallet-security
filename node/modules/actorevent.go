@@ -79,7 +79,7 @@ func EthEventAPI(cfg config.FevmConfig) func(helpers.MetricsCtx, repo.LockedRepo
 			}
 
 			var err error
-			eventIndex, err = filter.NewEventIndex(dbPath)
+			eventIndex, err = filter.NewEventIndex(ctx, dbPath, chainapi.Chain)
 			if err != nil {
 				return nil, err
 			}
@@ -125,8 +125,6 @@ func EthEventAPI(cfg config.FevmConfig) func(helpers.MetricsCtx, repo.LockedRepo
 		ee.MemPoolFilterManager = &filter.MemPoolFilterManager{
 			MaxFilterResults: cfg.Events.MaxFilterResults,
 		}
-
-		const ChainHeadConfidence = 1
 
 		lc.Append(fx.Hook{
 			OnStart: func(context.Context) error {

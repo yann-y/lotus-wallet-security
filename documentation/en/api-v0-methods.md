@@ -2290,7 +2290,8 @@ Inputs:
   },
   {
     "MaxFee": "0",
-    "MsgUuid": "07070707-0707-0707-0707-070707070707"
+    "MsgUuid": "07070707-0707-0707-0707-070707070707",
+    "MaximizeFeeCap": true
   },
   [
     {
@@ -2767,7 +2768,8 @@ Inputs:
   ],
   {
     "MaxFee": "0",
-    "MsgUuid": "07070707-0707-0707-0707-070707070707"
+    "MsgUuid": "07070707-0707-0707-0707-070707070707",
+    "MaximizeFeeCap": true
   }
 ]
 ```
@@ -3026,7 +3028,8 @@ Inputs:
   },
   {
     "MaxFee": "0",
-    "MsgUuid": "07070707-0707-0707-0707-070707070707"
+    "MsgUuid": "07070707-0707-0707-0707-070707070707",
+    "MaximizeFeeCap": true
   }
 ]
 ```
@@ -4203,7 +4206,7 @@ Inputs:
 Response:
 ```json
 {
-  "Channel": "\u003cempty\u003e",
+  "Channel": "f01234",
   "From": "f01234",
   "To": "f01234",
   "ConfirmedAmt": "0",
@@ -4234,7 +4237,7 @@ Inputs:
 Response:
 ```json
 {
-  "Channel": "\u003cempty\u003e",
+  "Channel": "f01234",
   "From": "f01234",
   "To": "f01234",
   "ConfirmedAmt": "0",
@@ -4730,7 +4733,7 @@ Perms: read
 Inputs:
 ```json
 [
-  20
+  21
 ]
 ```
 
@@ -4745,7 +4748,7 @@ Perms: read
 Inputs:
 ```json
 [
-  20
+  21
 ]
 ```
 
@@ -4874,7 +4877,12 @@ Response:
       "Value": "0",
       "Method": 1,
       "Params": "Ynl0ZSBhcnJheQ==",
-      "ParamsCodec": 42
+      "ParamsCodec": 42,
+      "GasLimit": 42,
+      "ReadOnly": true,
+      "CodeCid": {
+        "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+      }
     },
     "MsgRct": {
       "ExitCode": 0,
@@ -4898,7 +4906,12 @@ Response:
           "Value": "0",
           "Method": 1,
           "Params": "Ynl0ZSBhcnJheQ==",
-          "ParamsCodec": 42
+          "ParamsCodec": 42,
+          "GasLimit": 42,
+          "ReadOnly": true,
+          "CodeCid": {
+            "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+          }
         },
         "MsgRct": {
           "ExitCode": 0,
@@ -4954,7 +4967,7 @@ Response:
     },
     "Nonce": 42,
     "Balance": "0",
-    "Address": "\u003cempty\u003e"
+    "Address": "f01234"
   }
 }
 ```
@@ -5104,7 +5117,12 @@ Response:
           "Value": "0",
           "Method": 1,
           "Params": "Ynl0ZSBhcnJheQ==",
-          "ParamsCodec": 42
+          "ParamsCodec": 42,
+          "GasLimit": 42,
+          "ReadOnly": true,
+          "CodeCid": {
+            "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+          }
         },
         "MsgRct": {
           "ExitCode": 0,
@@ -5128,7 +5146,12 @@ Response:
               "Value": "0",
               "Method": 1,
               "Params": "Ynl0ZSBhcnJheQ==",
-              "ParamsCodec": 42
+              "ParamsCodec": 42,
+              "GasLimit": 42,
+              "ReadOnly": true,
+              "CodeCid": {
+                "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+              }
             },
             "MsgRct": {
               "ExitCode": 0,
@@ -5243,7 +5266,7 @@ Response:
   },
   "Nonce": 42,
   "Balance": "0",
-  "Address": "\u003cempty\u003e"
+  "Address": "f01234"
 }
 ```
 
@@ -5431,7 +5454,6 @@ Response:
     "UpgradeRefuelHeight": 10101,
     "UpgradeTapeHeight": 10101,
     "UpgradeKumquatHeight": 10101,
-    "UpgradePriceListOopsHeight": 10101,
     "BreezeGasTampingDuration": 10101,
     "UpgradeCalicoHeight": 10101,
     "UpgradePersianHeight": 10101,
@@ -5447,8 +5469,10 @@ Response:
     "UpgradeSharkHeight": 10101,
     "UpgradeHyggeHeight": 10101,
     "UpgradeLightningHeight": 10101,
-    "UpgradeThunderHeight": 10101
-  }
+    "UpgradeThunderHeight": 10101,
+    "UpgradeWatermelonHeight": 10101
+  },
+  "Eip155ChainID": 123
 }
 ```
 
@@ -5987,6 +6011,7 @@ Response:
   "SectorSize": 34359738368,
   "WindowPoStPartitionSectors": 42,
   "ConsensusFaultElapsed": 10101,
+  "PendingOwnerAddress": "f01234",
   "Beneficiary": "f01234",
   "BeneficiaryTerm": {
     "Quota": "0",
@@ -6371,7 +6396,7 @@ Inputs:
 ]
 ```
 
-Response: `20`
+Response: `21`
 
 ### StateReadState
 StateReadState returns the indicated actor's state.
@@ -6492,7 +6517,12 @@ Response:
       "Value": "0",
       "Method": 1,
       "Params": "Ynl0ZSBhcnJheQ==",
-      "ParamsCodec": 42
+      "ParamsCodec": 42,
+      "GasLimit": 42,
+      "ReadOnly": true,
+      "CodeCid": {
+        "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+      }
     },
     "MsgRct": {
       "ExitCode": 0,
@@ -6516,7 +6546,12 @@ Response:
           "Value": "0",
           "Method": 1,
           "Params": "Ynl0ZSBhcnJheQ==",
-          "ParamsCodec": 42
+          "ParamsCodec": 42,
+          "GasLimit": 42,
+          "ReadOnly": true,
+          "CodeCid": {
+            "/": "bafy2bzacea3wsdh6y3a36tb3skempjoxqpuyompjbmfeyf34fi3uy6uue42v4"
+          }
         },
         "MsgRct": {
           "ExitCode": 0,

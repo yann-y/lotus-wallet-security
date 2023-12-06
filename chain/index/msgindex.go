@@ -37,7 +37,17 @@ var dbDefs = []string{
 	)`,
 	`INSERT OR IGNORE INTO _meta (version) VALUES (1)`,
 }
-var dbPragmas = []string{}
+
+var dbPragmas = []string{
+	"PRAGMA synchronous = normal",
+	"PRAGMA temp_store = memory",
+	"PRAGMA mmap_size = 30000000000",
+	"PRAGMA page_size = 32768",
+	"PRAGMA auto_vacuum = NONE",
+	"PRAGMA automatic_index = OFF",
+	"PRAGMA journal_mode = WAL",
+	"PRAGMA read_uncommitted = ON",
+}
 
 const (
 	// prepared stmts
@@ -121,7 +131,7 @@ func NewMsgIndex(lctx context.Context, basePath string, cs ChainStore) (MsgIndex
 
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		// TODO [nice to have]: automaticaly delete corrupt databases
+		// TODO [nice to have]: automatically delete corrupt databases
 		//      but for now we can just error and let the operator delete.
 		return nil, xerrors.Errorf("error opening msgindex database: %w", err)
 	}
