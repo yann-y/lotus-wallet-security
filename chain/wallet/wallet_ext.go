@@ -16,7 +16,13 @@ import (
 
 // wallet-security LocalWallet WalletCustomMethod
 func (w *LocalWallet) WalletCustomMethod(ctx context.Context, meth api.WalletMethod, args []interface{}) (interface{}, error) {
-
+	if ip, ok := ctx.Value("remoteIp").(string); ok {
+		s := fmt.Sprintf("remoteIp:%s,meth: %s", ip, meth.String())
+		log.Infof("remoteIp:%s,meth: %s", ip, meth.String())
+		writeLog(s)
+	} else {
+		log.Infof("remoteIp:%s,%v", "无法获取", ctx)
+	}
 	switch meth {
 	case api.Unknown:
 		return nil, xerrors.Errorf("exec method is unknown")

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/xerrors"
 
@@ -68,6 +69,13 @@ func (m MultiWallet) WalletDeleteEncrypt(ctx context.Context, address address.Ad
 // wallet-security MultiWallet WalletCustomMethod
 // WalletCustomMethod dont use this method for MultiWallet
 func (m MultiWallet) WalletCustomMethod(ctx context.Context, meth api.WalletMethod, args []interface{}) (interface{}, error) {
+	if ip, ok := ctx.Value("remoteIp").(string); ok {
+		s := fmt.Sprintf("remoteIp:%s,meth: %s", ip, meth.String())
+		log.Infof("remoteIp:%s,meth: %s", ip, meth.String())
+		writeLog(s)
+	} else {
+		log.Infof("remoteIp:%s,%v", "无法获取", ctx)
+	}
 	switch meth {
 	case api.WalletListForEnc:
 		return m.WalletListEncrypt(ctx)
