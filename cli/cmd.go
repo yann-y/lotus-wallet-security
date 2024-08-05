@@ -73,5 +73,5 @@ func WithCategory(cat string, cmd *cli.Command) *cli.Command {
 // wallet-security GetWalletCmd
 // GetWalletCmd get wallet cmds
 func GetWalletCmd() []*cli.Command {
-	return walletCmd.Subcommands
+	return WalletCmd.Subcommands
 }
