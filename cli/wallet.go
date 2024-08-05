@@ -31,7 +31,7 @@ import (
 	"github.com/filecoin-project/lotus/chain/wallet"
 )
 
-var walletCmd = &cli.Command{
+var WalletCmd = &cli.Command{
 	Name:  "wallet",
 	Usage: "Manage wallet",
 	Subcommands: []*cli.Command{

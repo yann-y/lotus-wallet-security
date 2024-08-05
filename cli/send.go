@@ -23,7 +23,7 @@ import (
 	"github.com/filecoin-project/lotus/chain/wallet"
 )
 
-var sendCmd = &cli.Command{
+var SendCmd = &cli.Command{
 	Name:      "send",
 	Usage:     "Send funds between accounts",
 	ArgsUsage: "[targetAddress] [amount]",
@@ -250,7 +250,7 @@ var sendCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Fprintf(cctx.App.Writer, "%s\n", sm.Cid())
+		_, _ = fmt.Fprintf(cctx.App.Writer, "%s\n", sm.Cid())
 		return nil
 	},
 }
